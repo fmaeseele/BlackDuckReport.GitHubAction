@@ -1,7 +1,5 @@
 ﻿using System;
-using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -35,93 +33,33 @@ public class Program
             tokenSource.Cancel();
         };
 
-        //var projectAnalyzer = Get<ProjectMetricDataAnalyzer>(host);
-
-        //Matcher matcher = new();
-        //matcher.AddIncludePatterns(new[] { "**/*.csproj", "**/*.vbproj" });
-
-        //Dictionary<string, CodeAnalysisMetricData> metricData = new(StringComparer.OrdinalIgnoreCase);
-        //var projects = matcher.GetResultsInFullPath(inputs.Directory);
-
-        //foreach (var project in projects)
-        //{
-        //    var metrics =
-        //        await projectAnalyzer.AnalyzeAsync(
-        //            workspace, project, tokenSource.Token);
-
-        //    foreach (var (path, metric) in metrics)
-        //    {
-        //        metricData[path] = metric;
-        //    }
-        //}
-
-        //var updatedMetrics = false;
-        //var title = "";
-        //StringBuilder summary = new();
-        //if (metricData is { Count: > 0 })
-        //{
-        //    var fileName = "CODE_METRICS.md";
-        //    var fullPath = Path.Combine(inputs.Directory, fileName);
-        //    var logger = Get<ILoggerFactory>(host).CreateLogger(nameof(StartAnalysisAsync));
-        //    var fileExists = File.Exists(fullPath);
-
-        //    logger.LogInformation(
-        //        $"{(fileExists ? "Updating" : "Creating")} {fileName} markdown file with latest code metric data.");
-
-        //    summary.AppendLine(
-        //        title = $"{(fileExists ? "Updated" : "Created")} {fileName} file, analyzed metrics for {metricData.Count} projects.");
-
-        //    foreach (var (path, _) in metricData)
-        //    {
-        //        summary.AppendLine($"- *{path}*");
-        //    }
-
-        //    var contents = metricData.ToMarkDownBody(inputs);
-        //    await File.WriteAllTextAsync(
-        //        fullPath,
-        //        contents,
-        //        tokenSource.Token);
-
-        //    updatedMetrics = true;
-        //}
-        //else
-        //{
-        //    summary.Append("No metrics were determined.");
-        //}
-
         ArgumentException.ThrowIfNullOrEmpty(inputs.ProjectName);
         ArgumentNullException.ThrowIfNull(inputs.ProjectVersion);
         ArgumentNullException.ThrowIfNull(inputs.BlackDuckUrl);
         ArgumentException.ThrowIfNullOrEmpty(inputs.BlackDuckToken);
 
-        var service = Get<BlackDuckReportGeneratorService>(host);
+        var blackDuckReportGeneratorService = Get<BlackDuckReportGeneratorService>(host);
 
-        await service.GenerateBlackDuckReportAsync(
+        // Generate the BlackDuck 
+        var projectList = await blackDuckReportGeneratorService.BlackDuckQueryProjectAsync(
             inputs.BlackDuckUrl,
             inputs.BlackDuckToken,
             inputs.ProjectName,
             inputs.ProjectVersion,
             tokenSource.Token).ConfigureAwait(false);
+        if (!projectList.Any())
+            throw new InvalidOperationException($"Project not found: {inputs.ProjectName}");
+        // Filter on specific project name, if provided
+        var project = projectList.FirstOrDefault(p => p.Name is not null && p.Name.Equals(inputs.ProjectName, StringComparison.OrdinalIgnoreCase))
+            ?? throw new InvalidOperationException($"Project not found: {inputs.ProjectName}");
 
+        var summaryMarkdown = blackDuckReportGeneratorService.GenerateMarkdownSecurityReport(project);
 
-        // https://docs.github.com/actions/reference/workflow-commands-for-github-actions#setting-an-output-parameter
-        // ::set-output deprecated as mentioned in https://github.blog/changelog/2022-10-11-github-actions-deprecating-save-state-and-set-output-commands/
-        var githubOutputFile = Environment.GetEnvironmentVariable("GITHUB_OUTPUT", EnvironmentVariableTarget.Process);
-        if (!string.IsNullOrWhiteSpace(githubOutputFile))
+        var githubActionOutput = new ActionOutputs()
         {
-            using var textWriter = new StreamWriter(githubOutputFile!, true, Encoding.UTF8);
-            //textWriter.WriteLine($"updated-metrics={updatedMetrics}");
-            //textWriter.WriteLine($"summary-title={title}");
-            textWriter.WriteLine("summary-details<<EOF");
-            //textWriter.WriteLine(summary);
-            textWriter.WriteLine("EOF");
-        }
-        else
-        {
-            //Console.WriteLine($"::set-output name=updated-metrics::{updatedMetrics}");
-            //Console.WriteLine($"::set-output name=summary-title::{title}");
-            //Console.WriteLine($"::set-output name=summary-details::{summary}");
-        }
+            Summary = summaryMarkdown,
+        };
+        githubActionOutput.BuildOutput();
 
         await Task.CompletedTask;
     }

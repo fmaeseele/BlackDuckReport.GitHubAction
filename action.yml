@@ -17,10 +17,8 @@ inputs:
     description: 'The BlackDuck api token'
     required: true
 outputs:
-  summary-title:
-    description: 'The title of the code scanning report action.'
-  summary-details:
-    description: 'A detailed summary of all the projects that were flagged.'
+  blackduck-scan-security-report:
+    description: 'The BlackDuck scan security report.'
 runs:
   using: 'docker'
   image: 'Dockerfile'

@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 
 using BlackDuckReport.GitHubAction.Api;
 
+using Markdown;
+
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -24,9 +26,9 @@ internal sealed class BlackDuckReportGeneratorService
         _logger = serviceProvider.GetService<ILogger<BlackDuckReportGeneratorService>>();
     }
 
-    public async Task GenerateBlackDuckReportAsync(Uri? url, string? authToken, string? projectName, Version? projectVersion, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<BlackDuckApi.Models.Project>> BlackDuckQueryProjectAsync(Uri? url, string? authToken, string? projectName, Version? projectVersion, CancellationToken cancellationToken)
     {
-        using var scope = _logger?.BeginScope("GenerateBlackDuckReportAsync");
+        using var scope = _logger?.BeginScope(nameof(BlackDuckQueryProjectAsync));
 
         ArgumentNullException.ThrowIfNull(url);
         ArgumentException.ThrowIfNullOrEmpty(authToken);
@@ -36,12 +38,13 @@ internal sealed class BlackDuckReportGeneratorService
 
         var api = new BlackDuckApi(_serviceProvider, url, authToken, projectName);
         await api.LoginAsync(cancellationToken).ConfigureAwait(false);
-        var projects = await api.GetDashboardAsync(projectVersion, cancellationToken).ConfigureAwait(false);
-        DumpReport(projectName, projectVersion, projects);
+        return await api.GetDashboardAsync(projectVersion, cancellationToken).ConfigureAwait(false);
     }
 
-    private static void DumpReport(string projectName, Version? projectVersion, List<BlackDuckApi.Models.Project> projects)
+    public void DumpReport(string projectName, Version? projectVersion, IReadOnlyList<BlackDuckApi.Models.Project> projects)
     {
+        using var scope = _logger?.BeginScope(nameof(DumpReport));
+
         if (projects.Count == 0)
             throw new InvalidOperationException($"Project not found: {projectName}");
 
@@ -70,5 +73,52 @@ internal sealed class BlackDuckReportGeneratorService
             foreach (var component in project.ComponentsWithMedium)
                 Console.WriteLine($"\t\t  Component: [{component.Name}] Id: [{component.Id}] Count={component.Vulnerabilities.Medium}");
         }
+    }
+
+    public string GenerateMarkdownSecurityReport(BlackDuckApi.Models.Project project)
+    {
+        using var scope = _logger?.BeginScope(nameof(GenerateMarkdownSecurityReport));
+
+        ArgumentNullException.ThrowIfNull(project);
+
+        var document = new MarkdownDocument();
+
+        document.Append(new MarkdownHeader($"Project: {project.Name} - Version: {project.Version}", 2));
+        document.Append(new MarkdownHeader("Vulnerabilities", 3));
+
+        document.Append(new MarkdownUnorderedList(new[]
+        {
+                new MarkdownText($"Critical: {project.Vulnerabilities.Critical}"),
+                new MarkdownText($"High: {project.Vulnerabilities.High}"),
+                new MarkdownText($"Medium: {project.Vulnerabilities.Medium}")
+            }));
+
+        document.Append(new MarkdownTitle("Critical Components", 4));
+        foreach (var c in project.ComponentsWithCritical)
+        {
+            document.Append(new MarkdownUnorderedListItem(
+                new MarkdownText($"Component: {c.Name} (ID: {c.Id}) - Count: {c.Vulnerabilities.Critical}")
+            ));
+        }
+
+        document.Append(new MarkdownTitle("High Components", 4));
+        foreach (var c in project.ComponentsWithHigh)
+        {
+            document.Append(new MarkdownUnorderedListItem(
+                new MarkdownText($"Component: {c.Name} (ID: {c.Id}) - Count: {c.Vulnerabilities.High}")
+            ));
+        }
+
+        document.Append(new MarkdownTitle("Medium Components", 4));
+        foreach (var c in project.ComponentsWithMedium)
+        {
+            document.Append(new MarkdownUnorderedListItem(
+                new MarkdownText($"Component: {c.Name} (ID: {c.Id}) - Count: {c.Vulnerabilities.Medium}")
+            ));
+        }
+
+        document.Append(new MarkdownNewLine());
+
+        return document.ToString();
     }
 }
