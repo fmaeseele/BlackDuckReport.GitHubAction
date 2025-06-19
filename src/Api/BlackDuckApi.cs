@@ -38,7 +38,7 @@ public sealed partial class BlackDuckApi
         var configuration = new RestConfiguration()
         {
             BaseAddress = url,
-            UseFiddlerProxy = true
+            //UseFiddlerProxy = true
         };
         _restClient = new RestClient(serviceProvider, configuration);
     }
