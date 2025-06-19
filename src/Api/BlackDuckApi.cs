@@ -102,7 +102,7 @@ public sealed partial class BlackDuckApi
                 })
                 .WithBearerToken(Token?.BearerToken);
 
-                _logger?.LogInformation("Requesting project components for {projectName} with version: {version}", _projectName, project.VersionName);
+                _logger?.LogInformation("Requesting project components for {projectName} with version: {version}", project.ProjectName, project.VersionName);
 
                 var result = await _restClient.SendJsonMessageAsync(request2, ProjectVulnerabilitiesContext.Default.ProjectVulnerabilities, ErrorContext.Default.Error, false, cancellationToken: cancellationToken).ConfigureAwait(false);
                 if (result.Items is null)

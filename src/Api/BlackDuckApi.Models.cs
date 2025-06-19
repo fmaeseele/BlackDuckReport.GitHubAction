@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 
@@ -24,6 +25,8 @@ public partial class BlackDuckApi
 
             internal Component(Json.ComponentItem component)
             {
+                ArgumentNullException.ThrowIfNull(component);
+
                 Name = component.ComponentName;
                 Version = component.ComponentVersionName;
                 Id = component.ComponentVersionOriginId;
@@ -41,6 +44,7 @@ public partial class BlackDuckApi
         {
             public string? Name { get; }
             public string? Version { get; }
+            public DateTime? LastUpdatedAt { get; }
             public IReadOnlyList<Component> Components { get; }
             public Vulnerabilities Vulnerabilities { get; }
             public IReadOnlyList<Component> ComponentsWithCritical => [.. Components.Where(c => c.Vulnerabilities.Critical != 0)];
@@ -49,8 +53,12 @@ public partial class BlackDuckApi
 
             internal Project(Json.ProjectItem project, List<Json.ComponentItem> components)
             {
+                ArgumentNullException.ThrowIfNull(project);
+                ArgumentNullException.ThrowIfNull(components);
+
                 Name = project.ProjectName;
                 Version = project.VersionName;
+                LastUpdatedAt = project.LastUpdatedAt;
                 Components = [.. components.Select(c => new Component(c))];
                 Vulnerabilities = new Vulnerabilities()
                 {
