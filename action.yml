@@ -18,22 +18,18 @@ inputs:
     required: true
 outputs:
   summary-title:
-    description: 'The title of the code metrics action.'
+    description: 'The title of the code scanning report action.'
   summary-details:
     description: 'A detailed summary of all the projects that were flagged.'
-  updated-metrics:
-    description: 'A boolean value, indicating whether or not the CODE_METRICS.md was updated as a result of running this action.'
 runs:
   using: 'docker'
   image: 'Dockerfile'
   args:
-  - '-o'
-  - ${{ inputs.owner }}
-  - '-n'
-  - ${{ inputs.name }}
-  - '-b'
-  - ${{ inputs.branch }}
-  - '-d'
-  - ${{ inputs.dir }}
-  - '-w'
-  - ${{ inputs.workspace }}
+  - '-p'
+  - ${{ inputs.project_name }}
+  - '-f'
+  - ${{ inputs.project_version }}
+  - '-u'
+  - ${{ inputs.blackducksca_url }}
+  - '-t'
+  - ${{ inputs.blackducksca_token }}
