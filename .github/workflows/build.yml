@@ -1,0 +1,53 @@
+name: CI Build and Test
+
+on:
+  push:
+    branches: [ "master" ]
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        dotnet-version: [ '9.x' ]
+        include:
+          - os: ubuntu-latest
+            runtime: linux-x64
+            platform-target: x64
+            executable-name: BlackDuckReport.GitHubAction
+    env:
+      DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+      DOTNET_CLI_TELEMETRY_OPTOUT: true
+      DOTNET_NOLOGO: true
+    steps:
+    - name: Check Out Repository
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ matrix.dotnet-version }}
+
+    - name: Read Version from version.txt (windows)
+      if: ${{ matrix.os == 'windows-latest' }}
+      run: |
+          $VERSION = Get-Content version.txt
+          echo "Version: $VERSION"
+          echo "VERSION=$VERSION" >> $env:GITHUB_ENV
+    - name: Read Version from version.txt (Linux or MacOs)
+      if: ${{ matrix.os != 'windows-latest' }}
+      run: |
+          VERSION=$(cat version.txt)
+          echo "Version: $VERSION"
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+    - name: Publish AOT executable
+      run: dotnet publish -o ./publish --self-contained --runtime ${{ matrix.runtime }} -p:PlatformTarget=${{ matrix.platform-target }} ./src/BlackDuckReport.GitHubAction.csproj
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: BlackDuckReport.GitHubAction_${{ matrix.runtime }}_v${{ env.VERSION }}
+        path: ./publish/${{ matrix.executable-name }}

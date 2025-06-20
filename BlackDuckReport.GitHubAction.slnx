@@ -10,6 +10,10 @@
     <File Path="Dockerfile" />
     <File Path="LICENSE" />
     <File Path="README.md" />
+    <File Path="version.txt" />
+  </Folder>
+  <Folder Name="/Solution Items/workflows/">
+    <File Path=".github/workflows/build.yml" />
   </Folder>
   <Project Path="src/BlackDuckReport.GitHubAction.csproj">
     <Platform Project="x64" />
