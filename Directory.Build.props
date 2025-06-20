@@ -35,7 +35,7 @@
 		<TreatWarningsAsErrors>True</TreatWarningsAsErrors>
 		<AnalysisLevel>latest</AnalysisLevel>
 		<AnalysisMode>default</AnalysisMode>
-		<NoWarn>$(NoWarn)</NoWarn>
+		<NoWarn>IL2104;IL3053;$(NoWarn)</NoWarn>
 		<WarningsAsErrors>$(WarningsAsErrors)</WarningsAsErrors>
 		<ImplicitUsings>disable</ImplicitUsings>
 		<InvariantGlobalization>true</InvariantGlobalization>

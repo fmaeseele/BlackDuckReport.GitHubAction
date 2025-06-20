@@ -44,10 +44,10 @@ jobs:
           echo "VERSION=$VERSION" >> $GITHUB_ENV
 
     - name: Publish AOT executable
-      run: dotnet publish -o ./publish --self-contained --runtime ${{ matrix.runtime }} -p:PlatformTarget=${{ matrix.platform-target }} -p:PublishAot=true ./src/BlackDuckReport.GitHubAction.csproj
+      run: dotnet publish -o ./target/publish/${{ matrix.runtime }} --self-contained --runtime ${{ matrix.runtime }} -p:PlatformTarget=${{ matrix.platform-target }} -p:PublishAot=true ./src/BlackDuckReport.GitHubAction.csproj
 
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
         name: BlackDuckReport.GitHubAction_${{ matrix.runtime }}_v${{ env.VERSION }}
-        path: ./publish/${{ matrix.executable-name }}
+        path: ./target/publish/${{ matrix.runtime }}/${{ matrix.executable-name }}
