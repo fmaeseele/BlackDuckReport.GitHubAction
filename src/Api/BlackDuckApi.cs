@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 
 using BlackDuckReport.GitHubAction.Extensions;
 using BlackDuckReport.GitHubAction.Http;
+using BlackDuckReport.GitHubAction.Utils;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -38,7 +39,7 @@ public sealed partial class BlackDuckApi
         var configuration = new RestConfiguration()
         {
             BaseAddress = url,
-            UseFiddlerProxy = true
+            UseFiddlerProxy = ProxyHelper.FiddlerRunning
         };
         _restClient = new RestClient(serviceProvider, configuration);
     }
