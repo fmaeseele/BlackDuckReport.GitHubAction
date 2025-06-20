@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -51,12 +52,17 @@ public class Program
         githubActionOutput.BuildOutput();
     }
 
-    static async Task Main(string[] args)
+    [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(ActionInputs))]
+    public static async Task Main(string[] args)
     {
         try
         {
+            // Ensure UTF-8 encoding for console output
+            Console.OutputEncoding = System.Text.Encoding.UTF8;
+
             using CancellationTokenSource tokenSource = new();
 
+            // Handle cancellation gracefully
             Console.CancelKeyPress += delegate
             {
                 tokenSource.Cancel();
@@ -98,6 +104,7 @@ public class Program
         catch (Exception ex)
         {
             Console.Error.WriteLine("An error occurred while running the host: " + ex.Message);
+            Console.Error.WriteLine("StackTrace: " + ex.StackTrace);
 
             Environment.Exit(1);
         }

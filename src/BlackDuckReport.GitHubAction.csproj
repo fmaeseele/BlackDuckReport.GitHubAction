@@ -6,10 +6,14 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="MarkdownBuilder" Version="0.2.0" />
 		<PackageReference Include="CommandLineParser" Version="2.9.1" />
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.6" />
 		<PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.6" />
 	</ItemGroup>
+
+	<Target Name="DisplayVersion" BeforeTargets="Compile">
+		<Message Text="Using VersionFile=$(VersionFile)" Importance="high" />
+		<Message Text="Version=$(Version)" Importance="high" />
+	</Target>
 
 </Project>

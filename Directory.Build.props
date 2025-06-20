@@ -1,5 +1,17 @@
 <Project>
 
+	<!-- Solution AssemblyInfo Properties -->
+	<PropertyGroup>
+		<Title>BlackDuck Report Summary</Title>
+		<!-- Description is hold into AssemblyTitle attribute -->
+		<Description>A tool to generate BlackDuck Scan Report Summary for Security vulnerabilities</Description>
+		<AssemblyTitle>BlackDuck Report Summary</AssemblyTitle>
+		<Authors>François MAESEELE</Authors>
+		<Product>BlackDuck Report Summary</Product>
+		<AssemblyTrademark></AssemblyTrademark>
+		<AssemblySupportUrl>https://github.com/fmaeseele/BlackDuckReport.GitHubAction/issues</AssemblySupportUrl>
+	</PropertyGroup>
+	
 	<!-- Supported Platforms -->
 	<PropertyGroup>
 		<TargetFramework>net9.0</TargetFramework>
@@ -24,6 +36,12 @@
 		<PlatformTarget>arm64</PlatformTarget>
 	</PropertyGroup>
 
+	<!-- SingleFile generation options -->
+	<PropertyGroup>
+		<!-- https://learn.microsoft.com/en-us/dotnet/core/deploying/single-file/overview?tabs=cli -->
+		<EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+	</PropertyGroup>
+
 	<!-- Code Generation options -->
 	<PropertyGroup>
 		<IsPackable>false</IsPackable>
@@ -35,7 +53,7 @@
 		<TreatWarningsAsErrors>True</TreatWarningsAsErrors>
 		<AnalysisLevel>latest</AnalysisLevel>
 		<AnalysisMode>default</AnalysisMode>
-		<NoWarn>IL2104;IL3053;$(NoWarn)</NoWarn>
+		<NoWarn>IL2104;$(NoWarn)</NoWarn>
 		<WarningsAsErrors>$(WarningsAsErrors)</WarningsAsErrors>
 		<ImplicitUsings>disable</ImplicitUsings>
 		<InvariantGlobalization>true</InvariantGlobalization>
@@ -60,5 +78,20 @@
 		<DebugType>none</DebugType>
 		<DebugSymbols>false</DebugSymbols>
 	</PropertyGroup>
+
+	<!-- Use file version.txt to inject the product version into every assembly properties -->
+	<Target Name="UpdateVersion" BeforeTargets="BeforeBuild">
+		<PropertyGroup>
+			<VersionFile>$([MSBuild]::NormalizePath('$(MSBuildProjectDirectory)/../version.txt'))</VersionFile>
+		</PropertyGroup>
+
+		<ReadLinesFromFile File="$(VersionFile)">
+			<Output TaskParameter="Lines" ItemName="VersionInfo"/>
+		</ReadLinesFromFile>
+
+		<PropertyGroup>
+			<Version>%(VersionInfo.Identity)</Version>
+		</PropertyGroup>
+	</Target>
 
 </Project>

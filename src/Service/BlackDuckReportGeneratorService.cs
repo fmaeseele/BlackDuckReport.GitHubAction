@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
 using BlackDuckReport.GitHubAction.Api;
-
-using Markdown;
+using BlackDuckReport.GitHubAction.MarkdownBuilder;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -41,47 +41,50 @@ public sealed class BlackDuckReportGeneratorService
         return await api.GetDashboardAsync(projectVersion, cancellationToken).ConfigureAwait(false);
     }
 
-    public void GenerateConsoleSecurityReport(BlackDuckApi.Models.Project project)
+    public string GenerateConsoleSecurityReport(BlackDuckApi.Models.Project project)
     {
         using var scope = _logger?.BeginScope(nameof(GenerateConsoleSecurityReport));
 
         ArgumentNullException.ThrowIfNull(project);
 
-        Console.WriteLine($"Project: {project.Name} Version: {project.Version} LastUpdatedAt: {project.LastUpdatedAt}");
-        Console.WriteLine($"\tVulnerabilities:");
-        Console.WriteLine($"\t\tCritical: {project.Vulnerabilities.Critical}");
-        Console.WriteLine($"\t\tHigh: {project.Vulnerabilities.High}");
-        Console.WriteLine($"\t\tMedium: {project.Vulnerabilities.Medium}");
-        Console.WriteLine($"\t\tLow: {project.Vulnerabilities.Low}");
-        Console.WriteLine();
+        var sb = new StringBuilder();
+        sb.AppendLine($"Project: {project.Name} Version: {project.Version} LastUpdatedAt: {project.LastUpdatedAt}");
+        sb.AppendLine($"\tVulnerabilities:");
+        sb.AppendLine($"\t\tCritical: {project.Vulnerabilities.Critical}");
+        sb.AppendLine($"\t\tHigh: {project.Vulnerabilities.High}");
+        sb.AppendLine($"\t\tMedium: {project.Vulnerabilities.Medium}");
+        sb.AppendLine($"\t\tLow: {project.Vulnerabilities.Low}");
+        sb.AppendLine();
 
         if (project.Vulnerabilities.Critical > 0)
         {
-            Console.WriteLine($"\t\tCritical: {project.Vulnerabilities.Critical}");
+            sb.AppendLine($"\t\tCritical: {project.Vulnerabilities.Critical}");
             foreach (var component in project.ComponentsWithCritical)
-                Console.WriteLine($"\t\t  Component: [{component.Name}] Id: [{component.Id}] Count={component.Vulnerabilities.Critical}");
+                sb.AppendLine($"\t\t  Component: [{component.Name}] Id: [{component.Id}] Count={component.Vulnerabilities.Critical}");
         }
 
         if (project.Vulnerabilities.High > 0)
         {
-            Console.WriteLine($"\t\tHigh: {project.Vulnerabilities.High}");
+            sb.AppendLine($"\t\tHigh: {project.Vulnerabilities.High}");
             foreach (var component in project.ComponentsWithHigh)
-                Console.WriteLine($"\t\t  Component: [{component.Name}] Id: [{component.Id}] Count={component.Vulnerabilities.High}");
+                sb.AppendLine($"\t\t  Component: [{component.Name}] Id: [{component.Id}] Count={component.Vulnerabilities.High}");
         }
 
         if (project.Vulnerabilities.Medium > 0)
         {
-            Console.WriteLine($"\t\tMedium: {project.Vulnerabilities.Medium}");
+            sb.AppendLine($"\t\tMedium: {project.Vulnerabilities.Medium}");
             foreach (var component in project.ComponentsWithMedium)
-                Console.WriteLine($"\t\t  Component: [{component.Name}] Id: [{component.Id}] Count={component.Vulnerabilities.Medium}");
+                sb.AppendLine($"\t\t  Component: [{component.Name}] Id: [{component.Id}] Count={component.Vulnerabilities.Medium}");
         }
 
         if (project.Vulnerabilities.Low > 0)
         {
-            Console.WriteLine($"\t\tLow: {project.Vulnerabilities.Low}");
+            sb.AppendLine($"\t\tLow: {project.Vulnerabilities.Low}");
             foreach (var component in project.ComponentsWithLow)
-                Console.WriteLine($"\t\t  Component: [{component.Name}] Id: [{component.Id}] Count={component.Vulnerabilities.Low}");
+                sb.AppendLine($"\t\t  Component: [{component.Name}] Id: [{component.Id}] Count={component.Vulnerabilities.Low}");
         }
+
+        return sb.ToString();
     }
 
     public string GenerateMarkdownSecurityReport(BlackDuckApi.Models.Project project)
