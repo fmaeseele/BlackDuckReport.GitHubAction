@@ -14,6 +14,7 @@ public partial class BlackDuckApi
             public int Critical;
             public int High;
             public int Medium;
+            public int Low;
         }
 
         public class Component
@@ -35,6 +36,7 @@ public partial class BlackDuckApi
                     Critical = component.RiskPriorityDistribution?.CRITICAL ?? 0,
                     High = component.RiskPriorityDistribution?.HIGH ?? 0,
                     Medium = component.RiskPriorityDistribution?.MEDIUM ?? 0,
+                    Low = component.RiskPriorityDistribution?.LOW ?? 0,
                 };
             }
         }
@@ -48,23 +50,25 @@ public partial class BlackDuckApi
             public IReadOnlyList<Component> Components { get; }
             public Vulnerabilities Vulnerabilities { get; }
             public IReadOnlyList<Component> ComponentsWithCritical => [.. Components.Where(c => c.Vulnerabilities.Critical != 0)];
-            public IReadOnlyList<Component> ComponentsWithHigh => [.. Components.Where(c => c.Vulnerabilities.High != 0)];
-            public IReadOnlyList<Component> ComponentsWithMedium => [.. Components.Where(c => c.Vulnerabilities.Medium != 0)];
+            public IReadOnlyList<Component> ComponentsWithHigh => [.. Components.Where(c => c.Vulnerabilities.Critical == 0 && c.Vulnerabilities.High != 0)];
+            public IReadOnlyList<Component> ComponentsWithMedium => [.. Components.Where(c => c.Vulnerabilities.Critical == 0 && c.Vulnerabilities.High == 0 && c.Vulnerabilities.Medium != 0)];
+            public IReadOnlyList<Component> ComponentsWithLow => [.. Components.Where(c => c.Vulnerabilities.Critical == 0 && c.Vulnerabilities.High == 0 && c.Vulnerabilities.Medium == 0 && c.Vulnerabilities.Low != 0)];
 
-            internal Project(Json.ProjectItem project, List<Json.ComponentItem> components)
+            internal Project(Json.ProjectItem project, IReadOnlyList<Json.ComponentItem> components)
             {
                 ArgumentNullException.ThrowIfNull(project);
                 ArgumentNullException.ThrowIfNull(components);
 
                 Name = project.ProjectName;
                 Version = project.VersionName;
-                LastUpdatedAt = project.LastUpdatedAt;
+                LastUpdatedAt = project.LastUpdatedAt?.ToLocalTime();
                 Components = [.. components.Select(c => new Component(c))];
                 Vulnerabilities = new Vulnerabilities()
                 {
-                    Critical = ComponentsWithCritical.Count,
-                    High = ComponentsWithHigh.Count,
-                    Medium = ComponentsWithMedium.Count,
+                    Critical = project.RiskProfile.Categories.VULNERABILITY.CRITICAL ?? 0,
+                    High = project.RiskProfile.Categories.VULNERABILITY.HIGH ?? 0,
+                    Medium = project.RiskProfile.Categories.VULNERABILITY.MEDIUM ?? 0,
+                    Low = project.RiskProfile.Categories.VULNERABILITY.LOW ?? 0,
                 };
             }
         }

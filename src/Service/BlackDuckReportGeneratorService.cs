@@ -52,19 +52,36 @@ public sealed class BlackDuckReportGeneratorService
         Console.WriteLine($"\t\tCritical: {project.Vulnerabilities.Critical}");
         Console.WriteLine($"\t\tHigh: {project.Vulnerabilities.High}");
         Console.WriteLine($"\t\tMedium: {project.Vulnerabilities.Medium}");
+        Console.WriteLine($"\t\tLow: {project.Vulnerabilities.Low}");
         Console.WriteLine();
 
-        Console.WriteLine($"\t\tCritical: {project.Vulnerabilities.Critical}");
-        foreach (var component in project.ComponentsWithCritical)
-            Console.WriteLine($"\t\t  Component: [{component.Name}] Id: [{component.Id}] Count={component.Vulnerabilities.Critical}");
+        if (project.Vulnerabilities.Critical > 0)
+        {
+            Console.WriteLine($"\t\tCritical: {project.Vulnerabilities.Critical}");
+            foreach (var component in project.ComponentsWithCritical)
+                Console.WriteLine($"\t\t  Component: [{component.Name}] Id: [{component.Id}] Count={component.Vulnerabilities.Critical}");
+        }
 
-        Console.WriteLine($"\t\tHigh: {project.Vulnerabilities.High}");
-        foreach (var component in project.ComponentsWithHigh)
-            Console.WriteLine($"\t\t  Component: [{component.Name}] Id: [{component.Id}] Count={component.Vulnerabilities.High}");
+        if (project.Vulnerabilities.High > 0)
+        {
+            Console.WriteLine($"\t\tHigh: {project.Vulnerabilities.High}");
+            foreach (var component in project.ComponentsWithHigh)
+                Console.WriteLine($"\t\t  Component: [{component.Name}] Id: [{component.Id}] Count={component.Vulnerabilities.High}");
+        }
 
-        Console.WriteLine($"\t\tMedium: {project.Vulnerabilities.Medium}");
-        foreach (var component in project.ComponentsWithMedium)
-            Console.WriteLine($"\t\t  Component: [{component.Name}] Id: [{component.Id}] Count={component.Vulnerabilities.Medium}");
+        if (project.Vulnerabilities.Medium > 0)
+        {
+            Console.WriteLine($"\t\tMedium: {project.Vulnerabilities.Medium}");
+            foreach (var component in project.ComponentsWithMedium)
+                Console.WriteLine($"\t\t  Component: [{component.Name}] Id: [{component.Id}] Count={component.Vulnerabilities.Medium}");
+        }
+
+        if (project.Vulnerabilities.Low > 0)
+        {
+            Console.WriteLine($"\t\tLow: {project.Vulnerabilities.Low}");
+            foreach (var component in project.ComponentsWithLow)
+                Console.WriteLine($"\t\t  Component: [{component.Name}] Id: [{component.Id}] Count={component.Vulnerabilities.Low}");
+        }
     }
 
     public string GenerateMarkdownSecurityReport(BlackDuckApi.Models.Project project)
@@ -104,65 +121,96 @@ public sealed class BlackDuckReportGeneratorService
                 [
                         new MarkdownTableHeaderCell("Critical", MarkdownTableTextAlignment.Center),
                         new MarkdownTableHeaderCell("High", MarkdownTableTextAlignment.Center),
-                        new MarkdownTableHeaderCell("Medium", MarkdownTableTextAlignment.Center)
+                        new MarkdownTableHeaderCell("Medium", MarkdownTableTextAlignment.Center),
+                        new MarkdownTableHeaderCell("Low", MarkdownTableTextAlignment.Center),
                 ]),
                 [
                     new MarkdownTableRow(
                         $"{project.Vulnerabilities.Critical}",
                         $"{project.Vulnerabilities.High}",
-                        $"{project.Vulnerabilities.Medium}"),
+                        $"{project.Vulnerabilities.Medium}",
+                        $"{project.Vulnerabilities.Low}"
+                    )
                 ]
             ));
 
         document.Append(new MarkdownHeader("Security vulnerabilities Details:", 3));
 
-        document.Append(new MarkdownHeader($"Critical: {project.Vulnerabilities.Critical}", 4));
-        document.Append(
-            new MarkdownTable(
-                new MarkdownTableHeader(
-                [
-                    new MarkdownTableHeaderCell("Component", MarkdownTableTextAlignment.Left),
+        if (project.Vulnerabilities.Critical > 0)
+        {
+            document.Append(new MarkdownHeader($"Critical: {project.Vulnerabilities.Critical}", 4));
+            document.Append(
+                new MarkdownTable(
+                    new MarkdownTableHeader(
+                    [
+                        new MarkdownTableHeaderCell("Component", MarkdownTableTextAlignment.Left),
                     new MarkdownTableHeaderCell("Id", MarkdownTableTextAlignment.Left),
                     new MarkdownTableHeaderCell("Count", MarkdownTableTextAlignment.Center)
-                ]),
-                [.. project.ComponentsWithCritical.Select(c => new MarkdownTableRow(
+                    ]),
+                    [.. project.ComponentsWithCritical.Select(c => new MarkdownTableRow(
                     c.Name ?? "Unknown",
                     c.Id ?? "Unknown",
                     $"{c.Vulnerabilities.Critical}"
                 ))]
             ));
+        }
 
-        document.Append(new MarkdownHeader($"High: {project.Vulnerabilities.High}", 4));
-        document.Append(
-            new MarkdownTable(
-                new MarkdownTableHeader(
-                [
-                    new MarkdownTableHeaderCell("Component", MarkdownTableTextAlignment.Left),
+        if (project.Vulnerabilities.High > 0)
+        {
+            document.Append(new MarkdownHeader($"High: {project.Vulnerabilities.High}", 4));
+            document.Append(
+                new MarkdownTable(
+                    new MarkdownTableHeader(
+                    [
+                        new MarkdownTableHeaderCell("Component", MarkdownTableTextAlignment.Left),
                     new MarkdownTableHeaderCell("Id", MarkdownTableTextAlignment.Left),
                     new MarkdownTableHeaderCell("Count", MarkdownTableTextAlignment.Center)
-                ]),
-                [.. project.ComponentsWithHigh.Select(c => new MarkdownTableRow(
+                    ]),
+                    [.. project.ComponentsWithHigh.Select(c => new MarkdownTableRow(
                     c.Name ?? "Unknown",
                     c.Id ?? "Unknown",
                     $"{c.Vulnerabilities.High}"
                 ))]
             ));
+        }
 
-        document.Append(new MarkdownHeader($"Medium: {project.Vulnerabilities.Medium}", 4));
-        document.Append(
-            new MarkdownTable(
-                new MarkdownTableHeader(
-                [
-                    new MarkdownTableHeaderCell("Component", MarkdownTableTextAlignment.Left),
+        if (project.Vulnerabilities.Medium > 0)
+        {
+            document.Append(new MarkdownHeader($"Medium: {project.Vulnerabilities.Medium}", 4));
+            document.Append(
+                new MarkdownTable(
+                    new MarkdownTableHeader(
+                    [
+                        new MarkdownTableHeaderCell("Component", MarkdownTableTextAlignment.Left),
                     new MarkdownTableHeaderCell("Id", MarkdownTableTextAlignment.Left),
                     new MarkdownTableHeaderCell("Count", MarkdownTableTextAlignment.Center)
-                ]),
-                [.. project.ComponentsWithMedium.Select(c => new MarkdownTableRow(
+                    ]),
+                    [.. project.ComponentsWithMedium.Select(c => new MarkdownTableRow(
                     c.Name ?? "Unknown",
                     c.Id ?? "Unknown",
                     $"{c.Vulnerabilities.Medium}"
                 ))]
             ));
+        }
+
+        if (project.Vulnerabilities.Low > 0)
+        {
+            document.Append(new MarkdownHeader($"Medium: {project.Vulnerabilities.Medium}", 4));
+            document.Append(
+                new MarkdownTable(
+                    new MarkdownTableHeader(
+                    [
+                        new MarkdownTableHeaderCell("Component", MarkdownTableTextAlignment.Left),
+                    new MarkdownTableHeaderCell("Id", MarkdownTableTextAlignment.Left),
+                    new MarkdownTableHeaderCell("Count", MarkdownTableTextAlignment.Center)
+                    ]),
+                    [.. project.ComponentsWithMedium.Select(c => new MarkdownTableRow(
+                    c.Name ?? "Unknown",
+                    c.Id ?? "Unknown",
+                    $"{c.Vulnerabilities.Medium}"
+                ))]
+            ));
+        }
 
         return document.ToString();
     }

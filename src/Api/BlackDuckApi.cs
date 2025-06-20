@@ -38,7 +38,7 @@ public sealed partial class BlackDuckApi
         var configuration = new RestConfiguration()
         {
             BaseAddress = url,
-            //UseFiddlerProxy = true
+            UseFiddlerProxy = true
         };
         _restClient = new RestClient(serviceProvider, configuration);
     }
@@ -84,10 +84,10 @@ public sealed partial class BlackDuckApi
 
         var modelProjects = new List<Models.Project>();
 
-        var projects = await _restClient.SendJsonMessageAsync(request, ProjectVersionsContext.Default.ProjectVersions, ErrorContext.Default.Error, false, cancellationToken: cancellationToken).ConfigureAwait(false);
-
-        if (projects.Items is not null)
-            foreach (var project in projects.Items)
+        var queryResult = await _restClient.SendJsonMessageAsync(request, ProjectListQueryResultContext.Default.ProjectListQueryResult, ErrorContext.Default.Error, false, cancellationToken: cancellationToken).ConfigureAwait(false);
+        ArgumentNullException.ThrowIfNull(queryResult);
+        if (queryResult.Items is not null)
+            foreach (var project in queryResult.Items)
             {
                 if (project is null)
                     continue;
@@ -104,7 +104,7 @@ public sealed partial class BlackDuckApi
 
                 _logger?.LogInformation("Requesting project components for {projectName} with version: {version}", project.ProjectName, project.VersionName);
 
-                var result = await _restClient.SendJsonMessageAsync(request2, ProjectVulnerabilitiesContext.Default.ProjectVulnerabilities, ErrorContext.Default.Error, false, cancellationToken: cancellationToken).ConfigureAwait(false);
+                var result = await _restClient.SendJsonMessageAsync(request2, ComponentListQueryResultContext.Default.ComponentListQueryResult, ErrorContext.Default.Error, false, cancellationToken: cancellationToken).ConfigureAwait(false);
                 if (result.Items is null)
                     continue;
 
