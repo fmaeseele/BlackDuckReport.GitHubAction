@@ -1,4 +1,4 @@
-name: CI Build and Test
+name: CI Build and Upload artifacts
 
 on:
   push:
@@ -44,7 +44,7 @@ jobs:
           echo "VERSION=$VERSION" >> $GITHUB_ENV
 
     - name: Publish AOT executable
-      run: dotnet publish -o ./publish --self-contained --runtime ${{ matrix.runtime }} -p:PlatformTarget=${{ matrix.platform-target }} ./src/BlackDuckReport.GitHubAction.csproj
+      run: dotnet publish -o ./publish --self-contained --runtime ${{ matrix.runtime }} -p:PlatformTarget=${{ matrix.platform-target }} -p:PublishAot=true ./src/BlackDuckReport.GitHubAction.csproj
 
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
