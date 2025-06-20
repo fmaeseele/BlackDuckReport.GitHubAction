@@ -1,12 +1,15 @@
 name: CI Build and Upload artifacts
 
+permissions:
+  contents: read
+
 on:
   push:
     branches: [ "master" ]
   workflow_dispatch:
 
 jobs:
-  build-and-test:
+  build-and-upload-artifacts:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
