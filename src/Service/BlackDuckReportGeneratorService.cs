@@ -13,7 +13,7 @@ using Microsoft.Extensions.Logging;
 
 namespace BlackDuckReport.GitHubAction.Service;
 
-internal sealed class BlackDuckReportGeneratorService
+public sealed class BlackDuckReportGeneratorService
 {
     private readonly ILogger? _logger;
     private readonly IServiceProvider _serviceProvider;
@@ -41,38 +41,30 @@ internal sealed class BlackDuckReportGeneratorService
         return await api.GetDashboardAsync(projectVersion, cancellationToken).ConfigureAwait(false);
     }
 
-    public void DumpReport(string projectName, Version? projectVersion, IReadOnlyList<BlackDuckApi.Models.Project> projects)
+    public void GenerateConsoleSecurityReport(BlackDuckApi.Models.Project project)
     {
-        using var scope = _logger?.BeginScope(nameof(DumpReport));
+        using var scope = _logger?.BeginScope(nameof(GenerateConsoleSecurityReport));
 
-        if (projects.Count == 0)
-            throw new InvalidOperationException($"Project not found: {projectName}");
+        ArgumentNullException.ThrowIfNull(project);
 
-        var filteredProjects = projectVersion is null ? projects : projects.Where(p => p.Version == projectVersion.ToString());
-        if (!filteredProjects.Any())
-            throw new InvalidOperationException($"Project version not found: {projectVersion}");
+        Console.WriteLine($"Project: {project.Name} Version: {project.Version} LastUpdatedAt: {project.LastUpdatedAt}");
+        Console.WriteLine($"\tVulnerabilities:");
+        Console.WriteLine($"\t\tCritical: {project.Vulnerabilities.Critical}");
+        Console.WriteLine($"\t\tHigh: {project.Vulnerabilities.High}");
+        Console.WriteLine($"\t\tMedium: {project.Vulnerabilities.Medium}");
+        Console.WriteLine();
 
-        foreach (var project in filteredProjects)
-        {
-            Console.WriteLine($"Project: {project.Name} Version: {project.Version}");
-            Console.WriteLine($"\tVulnerabilities:");
-            Console.WriteLine($"\t\tCritical: {project.Vulnerabilities.Critical}");
-            Console.WriteLine($"\t\tHigh: {project.Vulnerabilities.High}");
-            Console.WriteLine($"\t\tMedium: {project.Vulnerabilities.Medium}");
-            Console.WriteLine();
+        Console.WriteLine($"\t\tCritical: {project.Vulnerabilities.Critical}");
+        foreach (var component in project.ComponentsWithCritical)
+            Console.WriteLine($"\t\t  Component: [{component.Name}] Id: [{component.Id}] Count={component.Vulnerabilities.Critical}");
 
-            Console.WriteLine($"\t\tCritical: {project.Vulnerabilities.Critical}");
-            foreach (var component in project.ComponentsWithCritical)
-                Console.WriteLine($"\t\t  Component: [{component.Name}] Id: [{component.Id}] Count={component.Vulnerabilities.Critical}");
+        Console.WriteLine($"\t\tHigh: {project.Vulnerabilities.High}");
+        foreach (var component in project.ComponentsWithHigh)
+            Console.WriteLine($"\t\t  Component: [{component.Name}] Id: [{component.Id}] Count={component.Vulnerabilities.High}");
 
-            Console.WriteLine($"\t\tHigh: {project.Vulnerabilities.High}");
-            foreach (var component in project.ComponentsWithHigh)
-                Console.WriteLine($"\t\t  Component: [{component.Name}] Id: [{component.Id}] Count={component.Vulnerabilities.High}");
-
-            Console.WriteLine($"\t\tMedium: {project.Vulnerabilities.Medium}");
-            foreach (var component in project.ComponentsWithMedium)
-                Console.WriteLine($"\t\t  Component: [{component.Name}] Id: [{component.Id}] Count={component.Vulnerabilities.Medium}");
-        }
+        Console.WriteLine($"\t\tMedium: {project.Vulnerabilities.Medium}");
+        foreach (var component in project.ComponentsWithMedium)
+            Console.WriteLine($"\t\t  Component: [{component.Name}] Id: [{component.Id}] Count={component.Vulnerabilities.Medium}");
     }
 
     public string GenerateMarkdownSecurityReport(BlackDuckApi.Models.Project project)

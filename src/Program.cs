@@ -53,12 +53,8 @@ public class Program
         var project = projectList.FirstOrDefault(p => p.Name is not null && p.Name.Equals(inputs.ProjectName, StringComparison.OrdinalIgnoreCase))
             ?? throw new InvalidOperationException($"Project not found: {inputs.ProjectName}");
 
-        var summaryMarkdown = blackDuckReportGeneratorService.GenerateMarkdownSecurityReport(project);
-
-        var githubActionOutput = new ActionOutputs()
-        {
-            Summary = summaryMarkdown,
-        };
+        // Build the output
+        var githubActionOutput = new ActionOutputs(blackDuckReportGeneratorService, project);
         githubActionOutput.BuildOutput();
 
         await Task.CompletedTask;
