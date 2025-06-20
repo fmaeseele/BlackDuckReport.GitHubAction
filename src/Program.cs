@@ -21,17 +21,10 @@ public class Program
         return host.Services.GetRequiredService<TService>();
     }
 
-    static async Task StartAnalysisAsync(ActionInputs inputs, IHost host)
+    static async Task StartAnalysisAsync(ActionInputs inputs, IHost host, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(inputs);
         ArgumentNullException.ThrowIfNull(host);
-
-        using CancellationTokenSource tokenSource = new();
-
-        Console.CancelKeyPress += delegate
-        {
-            tokenSource.Cancel();
-        };
 
         ArgumentException.ThrowIfNullOrEmpty(inputs.ProjectName);
         ArgumentNullException.ThrowIfNull(inputs.ProjectVersion);
@@ -46,7 +39,7 @@ public class Program
             inputs.BlackDuckToken,
             inputs.ProjectName,
             inputs.ProjectVersion,
-            tokenSource.Token).ConfigureAwait(false);
+            cancellationToken).ConfigureAwait(false);
         if (!projectList.Any())
             throw new InvalidOperationException($"Project not found: {inputs.ProjectName}");
         // Filter on specific project name, if provided
@@ -60,37 +53,53 @@ public class Program
 
     static async Task Main(string[] args)
     {
-        using IHost host = Host.CreateDefaultBuilder(args)
-            .ConfigureServices((_, services) => services.AddSingleton<BlackDuckReportGeneratorService>())
-            .Build();
-
-        var parser = Parser.Default.ParseArguments<ActionInputs>(() => new(), args);
-
-        parser.WithNotParsed(errors =>
+        try
         {
-            var logger = Get<ILoggerFactory>(host).CreateLogger(nameof(Program));
-            logger.LogError("{error}", string.Join(Environment.NewLine, errors.Select(error => error.ToString())));
+            using CancellationTokenSource tokenSource = new();
 
-            Environment.Exit(2);
-        });
-
-        await parser.WithParsedAsync(async (options) =>
-        {
-            try
+            Console.CancelKeyPress += delegate
             {
-                await StartAnalysisAsync(options, host).ConfigureAwait(false);
+                tokenSource.Cancel();
+            };
 
-                Environment.Exit(0);
-            }
-            catch (Exception ex)
+            using IHost host = Host.CreateDefaultBuilder(args)
+                .ConfigureServices((_, services) => services.AddSingleton<BlackDuckReportGeneratorService>())
+                .Build();
+
+            var parser = Parser.Default.ParseArguments<ActionInputs>(() => new(), args);
+
+            parser.WithNotParsed(errors =>
             {
                 var logger = Get<ILoggerFactory>(host).CreateLogger(nameof(Program));
-                logger.LogError(ex, "An error occurred while processing the action inputs.");
+                logger.LogError("{error}", string.Join(Environment.NewLine, errors.Select(error => error.ToString())));
 
-                Environment.Exit(1);
-            }
-        });
+                Environment.Exit(2);
+            });
 
-        await host.RunAsync();
+            await parser.WithParsedAsync(async (options) =>
+            {
+                try
+                {
+                    await StartAnalysisAsync(options, host, tokenSource.Token).ConfigureAwait(false);
+
+                    Environment.Exit(0);
+                }
+                catch (Exception ex)
+                {
+                    var logger = Get<ILoggerFactory>(host).CreateLogger(nameof(Program));
+                    logger.LogError(ex, "An error occurred while processing the action inputs.");
+
+                    Environment.Exit(1);
+                }
+            });
+
+            await host.RunAsync(tokenSource.Token).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine("An error occurred while running the host: " + ex.Message);
+
+            Environment.Exit(1);
+        }
     }
 }
