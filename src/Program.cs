@@ -56,8 +56,6 @@ public class Program
         // Build the output
         var githubActionOutput = new ActionOutputs(blackDuckReportGeneratorService, project);
         githubActionOutput.BuildOutput();
-
-        await Task.CompletedTask;
     }
 
     static async Task Main(string[] args)
