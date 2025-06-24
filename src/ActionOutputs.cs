@@ -46,6 +46,9 @@ public class ActionOutputs
         {
             // Display Summary onto the Console
 
+#if DEBUG
+            var markdownSummary = _blackDuckReportGeneratorService.GenerateMarkdownSecurityReport(_project);
+#endif
             var consoleSummary = _blackDuckReportGeneratorService.GenerateConsoleSecurityReport(_project);
 
             Console.Write(consoleSummary);

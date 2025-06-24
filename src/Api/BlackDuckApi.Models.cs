@@ -15,6 +15,7 @@ public partial class BlackDuckApi
             public int High;
             public int Medium;
             public int Low;
+            public int Count;
         }
 
         public class Component
@@ -23,6 +24,7 @@ public partial class BlackDuckApi
             public string? Version { get; }
             public string? Id { get; }
             public Vulnerabilities Vulnerabilities { get; }
+            public string? MatchType { get; }
 
             internal Component(Json.ComponentItem component)
             {
@@ -30,14 +32,16 @@ public partial class BlackDuckApi
 
                 Name = component.ComponentName;
                 Version = component.ComponentVersionName;
-                Id = component.ComponentVersionOriginId;
+                Id = Name + ":" + Version;
                 Vulnerabilities = new Vulnerabilities()
                 {
-                    Critical = component.RiskPriorityDistribution?.CRITICAL ?? 0,
-                    High = component.RiskPriorityDistribution?.HIGH ?? 0,
-                    Medium = component.RiskPriorityDistribution?.MEDIUM ?? 0,
-                    Low = component.RiskPriorityDistribution?.LOW ?? 0,
+                    Critical = component.SecurityRiskProfile?.Counts?.FirstOrDefault(c => "CRITICAL".Equals(c.CountType, StringComparison.OrdinalIgnoreCase))?.Count_ ?? 0,
+                    High = component.SecurityRiskProfile?.Counts?.FirstOrDefault(c => "HIGH".Equals(c.CountType, StringComparison.OrdinalIgnoreCase))?.Count_ ?? 0,
+                    Medium = component.SecurityRiskProfile?.Counts?.FirstOrDefault(c => "MEDIUM".Equals(c.CountType, StringComparison.OrdinalIgnoreCase))?.Count_ ?? 0,
+                    Low = component.SecurityRiskProfile?.Counts?.FirstOrDefault(c => "LOW".Equals(c.CountType, StringComparison.OrdinalIgnoreCase))?.Count_ ?? 0,
+                    Count = component.SecurityRiskProfile?.Counts?.Where(c => !"OK".Equals(c.CountType, StringComparison.OrdinalIgnoreCase)).Sum(v => v.Count_) ?? 0,
                 };
+                MatchType = component.MatchTypes?.Count > 0 ? component.MatchTypes[0] : "";
             }
         }
 
@@ -49,10 +53,11 @@ public partial class BlackDuckApi
             public DateTime? LastUpdatedAt { get; }
             public IReadOnlyList<Component> Components { get; }
             public Vulnerabilities Vulnerabilities { get; }
-            public IReadOnlyList<Component> ComponentsWithCritical => [.. Components.Where(c => c.Vulnerabilities.Critical != 0)];
-            public IReadOnlyList<Component> ComponentsWithHigh => [.. Components.Where(c => c.Vulnerabilities.Critical == 0 && c.Vulnerabilities.High != 0)];
-            public IReadOnlyList<Component> ComponentsWithMedium => [.. Components.Where(c => c.Vulnerabilities.Critical == 0 && c.Vulnerabilities.High == 0 && c.Vulnerabilities.Medium != 0)];
-            public IReadOnlyList<Component> ComponentsWithLow => [.. Components.Where(c => c.Vulnerabilities.Critical == 0 && c.Vulnerabilities.High == 0 && c.Vulnerabilities.Medium == 0 && c.Vulnerabilities.Low != 0)];
+            public IEnumerable<Component> ComponentsWithCritical => [.. Components.Where(c => c.Vulnerabilities.Critical != 0)];
+            public IEnumerable<Component> ComponentsWithHigh => [.. Components.Where(c => c.Vulnerabilities.Critical == 0 && c.Vulnerabilities.High != 0)];
+            public IEnumerable<Component> ComponentsWithMedium => [.. Components.Where(c => c.Vulnerabilities.Critical == 0 && c.Vulnerabilities.High == 0 && c.Vulnerabilities.Medium != 0)];
+            public IEnumerable<Component> ComponentsWithLow => [.. Components.Where(c => c.Vulnerabilities.Critical == 0 && c.Vulnerabilities.High == 0 && c.Vulnerabilities.Medium == 0 && c.Vulnerabilities.Low != 0)];
+            public IEnumerable<Component> DirectDependencies => [.. Components.Where(c => c.MatchType?.Contains("DIRECT", StringComparison.OrdinalIgnoreCase) == true)];
 
             internal Project(Json.ProjectItem project, IReadOnlyList<Json.ComponentItem> components)
             {

@@ -73,16 +73,87 @@ public partial class BlackDuckApi
             [property: JsonPropertyName("_meta")] Meta Meta
         );
 
+        public record MatchAmbiguity(
+            [property: JsonPropertyName("alternateVersionIds")] IReadOnlyList<string> AlternateVersionIds,
+            [property: JsonPropertyName("kbArtifactMatchPercentage")] double? KbArtifactMatchPercentage
+        );
+
+        public record ComponentOrigin(
+            [property: JsonPropertyName("name")] string Name,
+            [property: JsonPropertyName("origin")] string Origin,
+            [property: JsonPropertyName("externalNamespace")] string ExternalNamespace,
+            [property: JsonPropertyName("externalId")] string ExternalId,
+            [property: JsonPropertyName("externalNamespaceDistribution")] bool? ExternalNamespaceDistribution,
+            [property: JsonPropertyName("packageUrl")] string PackageUrl,
+            [property: JsonPropertyName("_meta")] Meta Meta
+        );
+
+        public record ActivityData(
+            [property: JsonPropertyName("lastCommitDate")] DateTime? LastCommitDate,
+            [property: JsonPropertyName("newerReleases")] int? NewerReleases,
+            [property: JsonPropertyName("contributorCount12Month")] int? ContributorCount12Month,
+            [property: JsonPropertyName("commitCount12Month")] int? CommitCount12Month,
+            [property: JsonPropertyName("trending")] string Trending
+        );
+
+        public record Count(
+            [property: JsonPropertyName("countType")] string CountType,
+            [property: JsonPropertyName("count")] int? Count_
+        );
+
+        public record ActivityRiskProfile(
+            [property: JsonPropertyName("counts")] IReadOnlyList<Count> Counts
+        );
+
+        public record License(
+            [property: JsonPropertyName("licenseDisplay")] string LicenseDisplay,
+            [property: JsonPropertyName("licenseType")] string LicenseType,
+            [property: JsonPropertyName("licenses")] IReadOnlyList<License> Licenses,
+            [property: JsonPropertyName("license")] string LicenseName,
+            [property: JsonPropertyName("licenseFamilyName")] string LicenseFamilyName,
+            [property: JsonPropertyName("ownership")] string Ownership,
+            [property: JsonPropertyName("spdxId")] string SpdxId
+        );
+
+        public record LicenseRiskProfile(
+            [property: JsonPropertyName("counts")] IReadOnlyList<Count> Counts
+        );
+        public record OperationalRiskProfile(
+            [property: JsonPropertyName("counts")] IReadOnlyList<Count> Counts
+        );
+        public record SecurityRiskProfile(
+            [property: JsonPropertyName("counts")] IReadOnlyList<Count> Counts
+        );
+
+        public record VersionRiskProfile(
+            [property: JsonPropertyName("counts")] IReadOnlyList<Count> Counts
+        );
+
         public record ComponentItem(
-            [property: JsonPropertyName("component")] string Component,
             [property: JsonPropertyName("componentName")] string ComponentName,
-            [property: JsonPropertyName("componentVersion")] string ComponentVersion,
             [property: JsonPropertyName("componentVersionName")] string ComponentVersionName,
-            [property: JsonPropertyName("componentVersionOrigin")] string ComponentVersionOrigin,
-            [property: JsonPropertyName("componentVersionOriginName")] string ComponentVersionOriginName,
-            [property: JsonPropertyName("componentVersionOriginId")] string ComponentVersionOriginId,
-            [property: JsonPropertyName("riskPriorityDistribution")] Vulnerabilities RiskPriorityDistribution,
-            [property: JsonPropertyName("componentType")] string ComponentType,
+            [property: JsonPropertyName("component")] string Component,
+            [property: JsonPropertyName("componentVersion")] string ComponentVersion,
+            [property: JsonPropertyName("totalFileMatchCount")] int? TotalFileMatchCount,
+            [property: JsonPropertyName("matchConfidence")] double? MatchConfidence,
+            [property: JsonPropertyName("matchConfidenceStatus")] string MatchConfidenceStatus,
+            [property: JsonPropertyName("matchAmbiguity")] MatchAmbiguity MatchAmbiguity,
+            [property: JsonPropertyName("licenses")] IReadOnlyList<License> Licenses,
+            [property: JsonPropertyName("origins")] IReadOnlyList<ComponentOrigin> Origins,
+            [property: JsonPropertyName("usages")] IReadOnlyList<string> Usages,
+            [property: JsonPropertyName("matchTypes")] IReadOnlyList<string> MatchTypes,
+            [property: JsonPropertyName("inputExternalIds")] IReadOnlyList<string> InputExternalIds,
+            [property: JsonPropertyName("releasedOn")] DateTime? ReleasedOn,
+            [property: JsonPropertyName("licenseRiskProfile")] LicenseRiskProfile LicenseRiskProfile,
+            [property: JsonPropertyName("securityRiskProfile")] SecurityRiskProfile SecurityRiskProfile,
+            [property: JsonPropertyName("versionRiskProfile")] VersionRiskProfile VersionRiskProfile,
+            [property: JsonPropertyName("activityRiskProfile")] ActivityRiskProfile ActivityRiskProfile,
+            [property: JsonPropertyName("operationalRiskProfile")] OperationalRiskProfile OperationalRiskProfile,
+            [property: JsonPropertyName("activityData")] ActivityData ActivityData,
+            [property: JsonPropertyName("reviewStatus")] string ReviewStatus,
+            [property: JsonPropertyName("approvalStatus")] string ApprovalStatus,
+            [property: JsonPropertyName("policyStatus")] string PolicyStatus,
+            [property: JsonPropertyName("componentModified")] bool? ComponentModified,
             [property: JsonPropertyName("_meta")] Meta Meta
         );
 
@@ -95,8 +166,8 @@ public partial class BlackDuckApi
 
         public record Meta(
             [property: JsonPropertyName("allow")] IReadOnlyList<object> Allow,
-            [property: JsonPropertyName("href")] string Href,
-            [property: JsonPropertyName("links")] IReadOnlyList<object> Links
+            [property: JsonPropertyName("links")] IReadOnlyList<Link> Links,
+            [property: JsonPropertyName("href")] string Href
         );
 
         public record ReleasePolicyProfileCounts(

@@ -65,16 +65,17 @@ public sealed partial class BlackDuckApi
         _logger?.LogDebug("Authentication Successful");
     }
 
-    public async Task<List<Models.Project>> GetDashboardAsync(Version? projectVersion, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<Models.Project>> GetDashboardAsync(Version? projectVersion, CancellationToken cancellationToken = default)
     {
         using var loggerScope = _logger?.BeginScope("GetDashboardAsync");
 
         if (!IsLogged)
             throw new InvalidOperationException();
 
-        _logger?.LogInformation("Requesting project information for {projectName}", _projectName);
+        _logger?.LogInformation("Requesting project versions for {projectName}", _projectName);
 
-        var request = RestClient.CreateGetHttpMessage(Constants.HTTP_PROJECT_VERSIONS_URL)
+        var request = RestClient.CreateGetHttpMessage(Constants.HTTP_SEARCH_PROJECT_VERSIONS_URL)
+        .AcceptContent(Constants.HTTP_ACCEPT_JSON)
         .WithQueryParameters(new KeyValueList<string, string>
         {
             { "limit", "100" },
@@ -92,26 +93,38 @@ public sealed partial class BlackDuckApi
             {
                 if (project is null)
                     continue;
-                //if (projectVersion is not null && project.VersionName != projectVersion.ToString())
-                //    continue;
-                var url = project.Meta?.Href?.ToString() + "/vulnerability-bom";
-                var request2 = RestClient.CreateGetHttpMessage(url)
-                .WithQueryParameters(new KeyValueList<string, string>
-                {
-                    { "limit", "100" },
-                    { "offset", "0" },
-                })
-                .WithBearerToken(Token?.BearerToken);
 
-                _logger?.LogInformation("Requesting project components for {projectName} with version: {version}", project.ProjectName, project.VersionName);
-
-                var result = await _restClient.SendJsonMessageAsync(request2, ComponentListQueryResultContext.Default.ComponentListQueryResult, ErrorContext.Default.Error, false, cancellationToken: cancellationToken).ConfigureAwait(false);
-                if (result.Items is null)
-                    continue;
-
-                modelProjects.Add(new Models.Project(project, result.Items));
+                var components = await GetProjectComponents(project, cancellationToken).ConfigureAwait(false);
+                modelProjects.Add(new Models.Project(project, components));
             }
 
         return modelProjects;
+    }
+
+    private async Task<IReadOnlyList<Json.ComponentItem>> GetProjectComponents(Json.ProjectItem project, CancellationToken cancellationToken = default)
+    {
+        using var loggerScope = _logger?.BeginScope(nameof(GetProjectComponents));
+
+        ArgumentNullException.ThrowIfNull(project);
+
+        if (!IsLogged)
+            throw new InvalidOperationException();
+
+        _logger?.LogInformation("Requesting project components for {projectName} with version: {version}", project.ProjectName, project.VersionName);
+
+        var url = project.Meta?.Href?.ToString() + "/components";
+        var request = RestClient.CreateGetHttpMessage(url)
+        .AcceptContent(Constants.HTTP_ACCEPT_JSON)
+        .WithQueryParameters(new KeyValueList<string, string>
+        {
+            { "filter", "bomInclusion:false" },
+            { "filter", "bomMatchInclusion:false" },
+            { "filter", "bomMatchReviewStatus:reviewed" },
+            { "limit", "200" },
+            { "offset", "0" },
+        })
+        .WithBearerToken(Token?.BearerToken);
+        var result = await _restClient.SendJsonMessageAsync(request, ComponentListQueryResultContext.Default.ComponentListQueryResult, ErrorContext.Default.Error, false, cancellationToken: cancellationToken).ConfigureAwait(false);
+        return result.Items ?? [];
     }
 }
