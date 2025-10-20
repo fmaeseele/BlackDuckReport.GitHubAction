@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -42,18 +41,30 @@ public class Program
             inputs.ProjectVersion,
             cancellationToken).ConfigureAwait(false);
         if (!projectList.Any())
-            throw new InvalidOperationException($"Project not found: {inputs.ProjectName}");
-        // Filter on specific project name, if provided
-        var project = projectList.FirstOrDefault(p => p.Name is not null && p.Name.Equals(inputs.ProjectName, StringComparison.OrdinalIgnoreCase))
-            ?? throw new InvalidOperationException($"Project not found: {inputs.ProjectName}");
+            throw new InvalidOperationException($"Project name not found: {inputs.ProjectName}");
+
+        Api.BlackDuckApi.Models.Project? project = null;
+
+        // Filter on specific project version if provided
+        string? projectVersionString = inputs.ProjectVersion?.ToString();
+        if (!string.IsNullOrEmpty(projectVersionString))
+        {
+            project = projectList.FirstOrDefault(p => projectVersionString == p.Version)
+                ?? throw new InvalidOperationException($"Project version not found: {inputs.ProjectVersion}");
+        }
+        else
+        {
+            project = projectList[0];
+        }
 
         // Build the output
         var githubActionOutput = new ActionOutputs(blackDuckReportGeneratorService, project);
         githubActionOutput.BuildOutput();
+
+        await Task.CompletedTask;
     }
 
-    [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(ActionInputs))]
-    public static async Task Main(string[] args)
+    static async Task Main(string[] args)
     {
         try
         {
